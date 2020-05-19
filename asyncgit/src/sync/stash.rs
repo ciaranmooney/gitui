@@ -1,11 +1,18 @@
 #![allow(dead_code)]
 use super::utils::repo;
 use crate::error::Result;
-use git2::StashFlags;
+use git2::{Oid, StashFlags};
 use scopetime::scope_time;
 
 ///
-pub struct StashItems(Vec<String>);
+pub struct StashItem {
+    pub msg: String,
+    index: usize,
+    id: Oid,
+}
+
+///
+pub struct StashItems(Vec<StashItem>);
 
 ///
 pub fn get_stashes(repo_path: &str) -> Result<StashItems> {
@@ -15,8 +22,12 @@ pub fn get_stashes(repo_path: &str) -> Result<StashItems> {
 
     let mut list = Vec::new();
 
-    repo.stash_foreach(|_index, msg, _id| {
-        list.push(msg.to_string());
+    repo.stash_foreach(|index, msg, id| {
+        list.push(StashItem {
+            msg: msg.to_string(),
+            index,
+            id: *id,
+        });
         true
     })?;
 
@@ -90,7 +101,8 @@ mod tests {
         let res = get_stashes(repo_path)?;
 
         assert_eq!(res.0.len(), 1);
-        assert_eq!(res.0[0], "On master: foo");
+        assert_eq!(res.0[0].msg, "On master: foo");
+        assert_eq!(res.0[0].index, 0);
 
         Ok(())
     }
