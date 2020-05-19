@@ -23,9 +23,9 @@ pub fn get_stashes(repo_path: &str) -> Result<StashItems> {
     Ok(StashItems(list))
 }
 
-///
-fn stash(repo_path: &str, message: &str) -> Result<()> {
-    scope_time!("stash");
+// private just for testing right now
+fn stash_save(repo_path: &str, message: &str) -> Result<()> {
+    scope_time!("stash_save");
 
     let mut repo = repo(repo_path)?;
 
@@ -50,7 +50,7 @@ mod tests {
         let root = repo.path().parent().unwrap();
         let repo_path = root.as_os_str().to_str().unwrap();
 
-        assert_eq!(stash(repo_path, "").is_ok(), false);
+        assert_eq!(stash_save(repo_path, "").is_ok(), false);
 
         assert_eq!(
             get_stashes(repo_path).unwrap().0.is_empty(),
@@ -69,7 +69,7 @@ mod tests {
 
         assert_eq!(get_statuses(repo_path), (1, 0));
 
-        stash(repo_path, "stashname")?;
+        stash_save(repo_path, "stashname")?;
 
         assert_eq!(get_statuses(repo_path), (0, 0));
 
@@ -85,7 +85,7 @@ mod tests {
         File::create(&root.join("foo.txt"))?
             .write_all(b"test\nfoo")?;
 
-        stash(repo_path, "foo")?;
+        stash_save(repo_path, "foo")?;
 
         let res = get_stashes(repo_path)?;
 
