@@ -8,7 +8,7 @@ use crate::{
     keys,
     queue::{InternalEvent, NeedsUpdate, Queue},
     strings,
-    tabs::{Revlog, Status},
+    tabs::{Revlog, Stashing, Status},
 };
 use asyncgit::{sync, AsyncNotification, CWD};
 use crossbeam_channel::Sender;
@@ -36,6 +36,7 @@ pub struct App {
     tab: usize,
     revlog: Revlog,
     status_tab: Status,
+    stashing_tab: Stashing,
     queue: Queue,
 }
 
@@ -54,6 +55,7 @@ impl App {
             tab: 0,
             revlog: Revlog::new(&sender),
             status_tab: Status::new(&sender, &queue),
+            stashing_tab: Stashing::new(&queue),
             queue,
         }
     }
@@ -74,11 +76,13 @@ impl App {
 
         self.draw_tabs(f, chunks_main[0]);
 
-        if self.tab == 0 {
-            self.status_tab.draw(f, chunks_main[1]);
-        } else {
-            self.revlog.draw(f, chunks_main[1]);
-        }
+        //TODO: macro because of generic draw call
+        match self.tab {
+            0 => self.status_tab.draw(f, chunks_main[1]),
+            1 => self.revlog.draw(f, chunks_main[1]),
+            2 => self.stashing_tab.draw(f, chunks_main[1]),
+            _ => panic!("unknown tab"),
+        };
 
         Self::draw_commands(
             f,
@@ -133,6 +137,7 @@ impl App {
     pub fn update(&mut self) {
         trace!("update");
         self.status_tab.update();
+        self.stashing_tab.update();
     }
 
     ///
@@ -140,6 +145,7 @@ impl App {
         trace!("update_git: {:?}", ev);
 
         self.status_tab.update_git(ev);
+        self.stashing_tab.update_git(ev);
 
         match ev {
             AsyncNotification::Diff => (),
@@ -158,12 +164,16 @@ impl App {
     pub fn any_work_pending(&self) -> bool {
         self.status_tab.anything_pending()
             || self.revlog.any_work_pending()
+            || self.stashing_tab.anything_pending()
     }
 }
 
 // private impls
 impl App {
-    accessors!(self, [msg, reset, commit, help, revlog, status_tab]);
+    accessors!(
+        self,
+        [msg, reset, commit, help, revlog, status_tab, stashing_tab]
+    );
 
     fn check_quit(&mut self, ev: Event) -> bool {
         if let Event::Key(e) = ev {
@@ -175,17 +185,29 @@ impl App {
         false
     }
 
-    fn toggle_tabs(&mut self) {
-        self.tab += 1;
-        self.tab %= 2;
+    fn get_tabs(&mut self) -> Vec<&mut dyn Component> {
+        vec![
+            &mut self.status_tab,
+            &mut self.revlog,
+            &mut self.stashing_tab,
+        ]
+    }
 
-        if self.tab == 1 {
-            self.status_tab.hide();
-            self.revlog.show();
-        } else {
-            self.status_tab.show();
-            self.revlog.hide();
+    fn toggle_tabs(&mut self) {
+        let mut new_tab = self.tab + 1;
+        {
+            let tabs = self.get_tabs();
+            new_tab %= tabs.len();
+
+            for (i, t) in tabs.into_iter().enumerate() {
+                if new_tab == i {
+                    t.show();
+                } else {
+                    t.hide();
+                }
+            }
         }
+        self.tab = new_tab;
     }
 
     fn update_commands(&mut self) {
@@ -319,7 +341,11 @@ impl App {
         f.render_widget(
             Tabs::default()
                 .block(Block::default().borders(Borders::BOTTOM))
-                .titles(&[strings::TAB_STATUS, strings::TAB_LOG])
+                .titles(&[
+                    strings::TAB_STATUS,
+                    strings::TAB_LOG,
+                    strings::TAB_STASHING,
+                ])
                 .style(Style::default().fg(Color::White))
                 .highlight_style(
                     Style::default()
