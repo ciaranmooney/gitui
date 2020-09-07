@@ -17,6 +17,8 @@ use tui::{
     Frame,
 };
 
+const NEWLINE_GLPYH:&str = "\u{21b5}";
+
 /// primarily a subcomponet for user input of text (used in `CommitComponent`)
 pub struct TextInputComponent {
     title: String,
@@ -129,7 +131,7 @@ impl TextInputComponent {
 
         if cursor_str == "\n" {
             txt.push(Text::styled(
-                "\u{21b5}",
+                NEWLINE_GLPYH,
                 self.theme
                     .text(false, false)
                     .modifier(Modifier::UNDERLINED),
