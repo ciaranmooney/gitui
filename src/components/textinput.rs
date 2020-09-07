@@ -16,6 +16,7 @@ use tui::{
     widgets::{Clear, Text},
     Frame,
 };
+use tui::style::Style;
 
 const NEWLINE_GLPYH:&str = "\u{21b5}";
 
@@ -123,11 +124,12 @@ impl TextInputComponent {
             ));
         }
 
-        let cursor_str = self
-            .next_char_position()
-            // If the cursor is at the end of the msg
-            // a whitespace is used, so the cursor (underline) can be seen.
-            .map_or(" ", |pos| &self.msg[self.cursor_position..pos]);
+        // If the cursor is at the end of the msg
+        // a whitespace is used, so the cursor (underline) can be seen.
+        let cursor_str = match self.next_char_position() {
+            None => " ",
+            Some(pos) => &self.msg[self.cursor_position..pos],
+        };
 
         if cursor_str == "\n" {
             txt.push(Text::styled(
@@ -140,8 +142,12 @@ impl TextInputComponent {
 
         txt.push(Text::styled(
             cursor_str,
-            style.modifier(Modifier::UNDERLINED),
+            self.set_cursor_style(&cursor_str),
         ));
+        // txt.push(Text::styled(
+        //     cursor_str,
+        //     style.modifier(Modifier::UNDERLINED),
+        // ));
 
         // The final portion of the text is added if there are
         // still remaining characters.
@@ -152,6 +158,18 @@ impl TextInputComponent {
         }
 
         txt
+    }
+
+    fn set_cursor_style(&self, cursor: &str) -> Style {
+        if cursor == "\n" {
+            self.theme
+                .text(false, false)
+                .modifier(Modifier::UNDERLINED)
+        } else {
+            self.theme
+                .text(true, false)
+                .modifier(Modifier::UNDERLINED)
+        }
     }
 }
 
