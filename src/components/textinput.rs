@@ -125,8 +125,8 @@ impl TextInputComponent {
 
         let cursor_str = self
             .next_char_position()
-            // if the cursor is at the end of the msg
-            // a whitespace is used to underline
+            // If the cursor is at the end of the msg
+            // a whitespace is used, so the cursor (underline) can be seen.
             .map_or(" ", |pos| &self.msg[self.cursor_position..pos]);
 
         if cursor_str == "\n" {
