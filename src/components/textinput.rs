@@ -113,13 +113,14 @@ impl TextInputComponent {
 
     fn get_draw_text(&self) -> Vec<Text> {
         let style = self.theme.text(true, false);
-
+        let s = self.build_new_string();
         let mut txt = Vec::new();
+
         // The portion of the text before the cursor is added
         // if the cursor is not at the first character.
         if self.cursor_position > 0 {
             txt.push(Text::styled(
-                &self.msg[..self.cursor_position],
+                s[..self.cursor_position].to_string(),
                 style,
             ));
         }
@@ -131,33 +132,48 @@ impl TextInputComponent {
             Some(pos) => &self.msg[self.cursor_position..pos],
         };
 
-        if cursor_str == "\n" {
-            txt.push(Text::styled(
-                NEWLINE_GLPYH,
-                self.theme
-                    .text(false, false)
-                    .modifier(Modifier::UNDERLINED),
-            ));
-        }
-
         txt.push(Text::styled(
             cursor_str,
             self.set_cursor_style(&cursor_str),
         ));
-        // txt.push(Text::styled(
-        //     cursor_str,
-        //     style.modifier(Modifier::UNDERLINED),
-        // ));
 
-        // The final portion of the text is added if there are
-        // still remaining characters.
         if let Some(pos) = self.next_char_position() {
             if pos < self.msg.len() {
-                txt.push(Text::styled(&self.msg[pos..], style));
+                txt.push(Text::styled(s[pos..].to_string(), style));
             }
         }
 
         txt
+    }
+
+    fn build_new_string(&self) -> String {
+        let mut new_string = String::new();
+        println!("{}", self.msg);
+        println!("{:?}", self.cursor_position);
+        if self.cursor_position > 0 {
+            new_string.push_str(&self.msg[..self.cursor_position]);
+        }
+        println!("{}", new_string);
+
+        let c = match self.next_char_position() {
+            None => " ",
+            Some(pos) => &self.msg[self.cursor_position..pos],
+        };
+        println!("cursor: {}", c);
+        if c == "\n" {
+            new_string.push_str(NEWLINE_GLPYH);
+        } else {
+            new_string.push_str(c)
+        }
+
+        if let Some(pos) = self.next_char_position() {
+            if pos < self.msg.len() {
+                new_string.push_str(&self.msg[pos..]);
+            }
+        }
+
+        println!("{}", new_string);
+        new_string
     }
 
     fn set_cursor_style(&self, cursor: &str) -> Style {
