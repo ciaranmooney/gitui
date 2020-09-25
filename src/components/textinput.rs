@@ -128,41 +128,48 @@ impl TextInputComponent {
         // If the cursor is at the end of the msg
         // a whitespace is used, so the cursor (underline) can be seen.
         let cursor_str = match self.next_char_position() {
-            None => " ",
-            Some(pos) => &self.msg[self.cursor_position..pos],
+            None => " ".to_string(),
+            Some(pos) => {
+                let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
+                s[self.cursor_position..n].to_string()
+            },
         };
 
         txt.push(Text::styled(
-            cursor_str,
+            cursor_str.clone(),
             self.set_cursor_style(&cursor_str),
         ));
 
         if let Some(pos) = self.next_char_position() {
+            println!("pos: {}", pos);
             if pos < self.msg.len() {
-                txt.push(Text::styled(s[pos..].to_string(), style));
+                let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
+                println!("Something: {}", s[n..].to_string());
+                txt.push(Text::styled(s[n..].to_string(), style));
             }
         }
-
         txt
     }
 
     fn build_new_string(&self) -> String {
         let mut new_string = String::new();
-        println!("{}", self.msg);
-        println!("{:?}", self.cursor_position);
+        println!("self.msg: {}", self.msg);
+        println!("cursor position: {:?}", self.cursor_position);
         if self.cursor_position > 0 {
             new_string.push_str(&self.msg[..self.cursor_position]);
         }
-        println!("{}", new_string);
+        println!("string before cursor:{}", new_string);
 
         let c = match self.next_char_position() {
             None => " ",
             Some(pos) => &self.msg[self.cursor_position..pos],
         };
-        println!("cursor: {}", c);
+        println!("cursor: {}.", c);
         if c == "\n" {
+            println!("newline!");
             new_string.push_str(NEWLINE_GLPYH);
         } else {
+            println!("not newline!");
             new_string.push_str(c)
         }
 
@@ -172,7 +179,7 @@ impl TextInputComponent {
             }
         }
 
-        println!("{}", new_string);
+        println!("final string: {}", new_string);
         new_string
     }
 
@@ -380,6 +387,7 @@ mod tests {
 
     #[test]
     fn test_visualize_newline() {
+        // re thttps://stackoverflow.com/questions/51982999/slice-a-string-containing-unicode-chars
         let mut comp = TextInputComponent::new(
             SharedTheme::default(),
             SharedKeyConfig::default(),
@@ -396,7 +404,7 @@ mod tests {
 
         let txt = comp.get_draw_text();
 
-        assert_eq!(txt.len(), 4);
+        assert_eq!(txt.len(), 3);
         assert_eq!(get_text(&txt[0]), Some("a"));
         assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
         assert_eq!(get_style(&txt[1]), Some(&underlined));
