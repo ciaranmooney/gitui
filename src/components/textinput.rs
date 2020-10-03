@@ -124,11 +124,12 @@ impl TextInputComponent {
                 style,
             ));
         }
-
+        println!("Next char pos: {:?}", self.next_char_position());
         // If the cursor is at the end of the msg
         // a whitespace is used, so the cursor (underline) can be seen.
         let cursor_str = match self.next_char_position() {
             None => " ".to_string(),
+            Some(pos) if pos == 1  => s.chars().nth(0).unwrap().to_string(),
             Some(pos) => {
                 let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
                 s[self.cursor_position..n].to_string()
@@ -351,6 +352,7 @@ mod tests {
             theme.text(true, false).modifier(Modifier::UNDERLINED);
 
         comp.set_text(String::from("a"));
+        // comp.incr_cursor();
 
         let txt = comp.get_draw_text();
 
