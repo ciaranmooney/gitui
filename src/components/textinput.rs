@@ -124,7 +124,7 @@ impl TextInputComponent {
                 style,
             ));
         }
-        println!("Next char pos: {:?}", self.next_char_position());
+        // println!("Next char pos: {:?}", self.next_char_position());
         // If the cursor is at the end of the msg
         // a whitespace is used, so the cursor (underline) can be seen.
         let cursor_str = match self.next_char_position() {
@@ -142,10 +142,10 @@ impl TextInputComponent {
         ));
 
         if let Some(pos) = self.next_char_position() {
-            println!("pos: {}", pos);
+            // println!("pos: {}", pos);
             if pos < self.msg.len() {
                 let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
-                println!("Something: {}", s[n..].to_string());
+                // println!("Something: {}", s[n..].to_string());
                 txt.push(Text::styled(s[n..].to_string(), style));
             }
         }
@@ -154,23 +154,23 @@ impl TextInputComponent {
 
     fn build_new_string(&self) -> String {
         let mut new_string = String::new();
-        println!("self.msg: {}", self.msg);
-        println!("cursor position: {:?}", self.cursor_position);
+        // println!("self.msg: {}", self.msg);
+        // println!("cursor position: {:?}", self.cursor_position);
         if self.cursor_position > 0 {
             new_string.push_str(&self.msg[..self.cursor_position]);
         }
-        println!("string before cursor:{}", new_string);
+        // println!("string before cursor:{}", new_string);
 
         let c = match self.next_char_position() {
             None => " ",
             Some(pos) => &self.msg[self.cursor_position..pos],
         };
-        println!("cursor: {}.", c);
+        // println!("cursor: {}.", c);
         if c == "\n" {
-            println!("newline!");
+            // println!("newline!");
             new_string.push_str(NEWLINE_GLPYH);
         } else {
-            println!("not newline!");
+            // println!("not newline!");
             new_string.push_str(c)
         }
 
@@ -180,7 +180,7 @@ impl TextInputComponent {
             }
         }
 
-        println!("final string: {}", new_string);
+        // println!("final string: {}", new_string);
         new_string
     }
 
@@ -388,7 +388,7 @@ mod tests {
     }
 
     #[test]
-    fn test_visualize_newline() {
+    fn test_breakline() {
         // re thttps://stackoverflow.com/questions/51982999/slice-a-string-containing-unicode-chars
         let mut comp = TextInputComponent::new(
             SharedTheme::default(),
@@ -403,6 +403,11 @@ mod tests {
 
         comp.set_text(String::from("a\nb"));
         comp.incr_cursor();
+        let txt = comp.get_draw_text();
+        assert_eq!(txt.len(), 3);
+        comp.incr_cursor();
+        let txt = comp.get_draw_text();
+        assert_eq!(txt.len(), 4);
 
         let txt = comp.get_draw_text();
 
@@ -410,8 +415,37 @@ mod tests {
         assert_eq!(get_text(&txt[0]), Some("a"));
         assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
         assert_eq!(get_style(&txt[1]), Some(&underlined));
-        assert_eq!(get_text(&txt[2]), Some("\n"));
-        assert_eq!(get_text(&txt[3]), Some("b"));
+        // assert_eq!(get_text(&txt[2]), Some("\n"));
+        assert_eq!(get_text(&txt[2]), Some("b"));
+    }
+
+    #[test]
+    fn test_visualize_newline_break() {
+        let mut comp = TextInputComponent::new(
+            SharedTheme::default(),
+            SharedKeyConfig::default(),
+            "",
+            "",
+        );
+
+        let theme = SharedTheme::default();
+        let underlined =
+            theme.text(false, false).modifier(Modifier::UNDERLINED);
+
+        comp.set_text(String::from("a\nb"));
+        comp.get_draw_text();
+        comp.incr_cursor();
+        comp.get_draw_text();
+        comp.incr_cursor();
+
+        let txt = comp.get_draw_text();
+
+        assert_eq!(txt.len(), 3);
+        assert_eq!(get_text(&txt[0]), Some("a"));
+        assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
+        assert_eq!(get_style(&txt[1]), Some(&underlined));
+        // assert_eq!(get_text(&txt[2]), Some("\n"));
+        assert_eq!(get_text(&txt[2]), Some("b"));
     }
 
     #[test]
