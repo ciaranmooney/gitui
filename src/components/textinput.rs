@@ -114,6 +114,7 @@ impl TextInputComponent {
     fn get_draw_text(&self) -> Vec<Text> {
         let style = self.theme.text(true, false);
         let s = self.build_new_string();
+        println!("{}", s);
         let mut txt = Vec::new();
 
         // The portion of the text before the cursor is added
@@ -124,16 +125,22 @@ impl TextInputComponent {
                 style,
             ));
         }
-        // println!("Next char pos: {:?}", self.next_char_position());
+
+        println!("Next char pos: {:?}", self.next_char_position());
+        println!("s len: {:?}", s.len());
         // If the cursor is at the end of the msg
         // a whitespace is used, so the cursor (underline) can be seen.
         let cursor_str = match self.next_char_position() {
             None => " ".to_string(),
-            Some(pos) if pos == 1  => s.chars().nth(0).unwrap().to_string(),
+            Some(1)  => s.chars().nth(0).unwrap().to_string(),
+            Some(pos) if s.len() == pos => {
+                let n = s.char_indices().map(|(i, _)| i).nth(pos-1).unwrap();
+                s[self.cursor_position..].to_string()
+            },
             Some(pos) => {
                 let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
                 s[self.cursor_position..n].to_string()
-            },
+            }
         };
 
         txt.push(Text::styled(
@@ -169,6 +176,7 @@ impl TextInputComponent {
         if c == "\n" {
             // println!("newline!");
             new_string.push_str(NEWLINE_GLPYH);
+            new_string.push_str("\n");
         } else {
             // println!("not newline!");
             new_string.push_str(c)
@@ -185,7 +193,7 @@ impl TextInputComponent {
     }
 
     fn set_cursor_style(&self, cursor: &str) -> Style {
-        if cursor == "\n" {
+        if cursor == NEWLINE_GLPYH {
             self.theme
                 .text(false, false)
                 .modifier(Modifier::UNDERLINED)
@@ -399,7 +407,7 @@ mod tests {
 
         let theme = SharedTheme::default();
         let underlined =
-            theme.text(false, false).modifier(Modifier::UNDERLINED);
+            theme.text(true, false).modifier(Modifier::UNDERLINED);
 
         comp.set_text(String::from("a\nb"));
         comp.incr_cursor();
@@ -407,16 +415,13 @@ mod tests {
         assert_eq!(txt.len(), 3);
         comp.incr_cursor();
         let txt = comp.get_draw_text();
-        assert_eq!(txt.len(), 4);
+        assert_eq!(txt.len(), 2);
 
         let txt = comp.get_draw_text();
 
-        assert_eq!(txt.len(), 3);
-        assert_eq!(get_text(&txt[0]), Some("a"));
-        assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
+        assert_eq!(get_text(&txt[0]), Some("a\n"));
+        assert_eq!(get_text(&txt[1]), Some("b"));
         assert_eq!(get_style(&txt[1]), Some(&underlined));
-        // assert_eq!(get_text(&txt[2]), Some("\n"));
-        assert_eq!(get_text(&txt[2]), Some("b"));
     }
 
     #[test]
@@ -437,14 +442,14 @@ mod tests {
         comp.incr_cursor();
         comp.get_draw_text();
         comp.incr_cursor();
+        comp.incr_cursor();
 
         let txt = comp.get_draw_text();
-
-        assert_eq!(txt.len(), 3);
-        assert_eq!(get_text(&txt[0]), Some("a"));
+        // assert_eq!(txt.len(), 3);
+        assert_eq!(get_text(&txt[0]), Some("a\n"));
         assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
         assert_eq!(get_style(&txt[1]), Some(&underlined));
-        // assert_eq!(get_text(&txt[2]), Some("\n"));
+        assert_eq!(get_text(&txt[2]), Some("\n"));
         assert_eq!(get_text(&txt[2]), Some("b"));
     }
 
