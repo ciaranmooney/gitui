@@ -133,10 +133,7 @@ impl TextInputComponent {
         let cursor_str = match self.next_char_position() {
             None => " ".to_string(),
             Some(1)  => s.chars().nth(0).unwrap().to_string(),
-            Some(pos) if s.len() == pos => {
-                let n = s.char_indices().map(|(i, _)| i).nth(pos-1).unwrap();
-                s[self.cursor_position..].to_string()
-            },
+            Some(pos) if s.len() == pos => s[self.cursor_position..].to_string(),
             Some(pos) => {
                 let n = s.char_indices().map(|(i, _)| i).nth(pos).unwrap();
                 s[self.cursor_position..n].to_string()
@@ -438,19 +435,12 @@ mod tests {
             theme.text(false, false).modifier(Modifier::UNDERLINED);
 
         comp.set_text(String::from("a\nb"));
-        comp.get_draw_text();
         comp.incr_cursor();
-        comp.get_draw_text();
-        comp.incr_cursor();
-        comp.incr_cursor();
-
         let txt = comp.get_draw_text();
-        // assert_eq!(txt.len(), 3);
-        assert_eq!(get_text(&txt[0]), Some("a\n"));
+        assert_eq!(get_text(&txt[0]), Some("a"));
         assert_eq!(get_text(&txt[1]), Some("\u{21b5}"));
         assert_eq!(get_style(&txt[1]), Some(&underlined));
-        assert_eq!(get_text(&txt[2]), Some("\n"));
-        assert_eq!(get_text(&txt[2]), Some("b"));
+        assert_eq!(get_text(&txt[2]), Some("\nb"));
     }
 
     #[test]
